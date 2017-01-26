@@ -1,0 +1,4 @@
+#+TITLE: Opal Commands
+#+OPTIONS: author:nil toc:nil date:nil num:nil html-postamble:nil
+
+A small utility for guessing what command you meant.
