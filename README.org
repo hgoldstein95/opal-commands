@@ -2,3 +2,8 @@
 #+OPTIONS: author:nil toc:nil date:nil num:nil html-postamble:nil
 
 A small utility for guessing what command you meant.
+
+* Dependencies
+
+  Before you can use this utility, make sure you have [[https://github.com/JohnLangford/vowpal_wabbit][Vowpal Wabbit]] Installed on
+  your system.
