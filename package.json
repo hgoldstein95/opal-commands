@@ -1,5 +1,5 @@
 {
-  "name": "opal-commands",
+  "name": "wyatt",
   "version": "1.0.0",
   "description": "A utility for completing console commands with Machine Learning.",
   "main": "index.js",
