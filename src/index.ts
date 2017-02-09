@@ -26,19 +26,18 @@ interface OpalModel {
 
 class Wabbit implements OpalModel {
     train(data: OpalFeatVec[]) {
+        throw new Error("Not yet implemented.");
     }
 
     predict(data: OpalFeatVec) {
-        console.log(this.format(data));
-
-        // child.exec("ls", (error, stdout, stderr) => {
-        //     if (error) {
-        //         console.error(`exec error: ${error}`);
-        //         return;
-        //     }
-        //     console.log(`stdout: ${stdout}`);
-        //     console.log(`stderr: ${stderr}`);
-        // });
+        let echo = `echo "${this.format(data)}"`;
+        let vw = "vw -i sandbox/wyatt.model -p sandbox/out --quiet";
+        child.exec(`${echo} | ${vw}`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`exec error: ${error}`);
+                return;
+            }
+        });
     }
 
     format(fv: OpalFeatVec): string {
