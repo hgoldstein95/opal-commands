@@ -1,59 +1,28 @@
-import * as child from 'child_process';
+import {
+    NumberFeature,
+    BooleanFeature,
+    BagOfWordsFeature,
+    SparseFeature,
+} from './features';
+import { distance } from './distance';
+import { densify } from './densify';
 
-// ---- General Use Code ----
+// --- Examples ---
 
-class OpalFeatVec {
-    featMap: Map<string, number>;
+let f1 = new BagOfWordsFeature("f1", "bar", ["foo", "bar", "baz"]);
+let f2 = new NumberFeature("f2", 42);
+let f3 = new BooleanFeature("f3", false);
+let f4 = new SparseFeature("f4", "/home/harry");
 
-    constructor(initial: [string, number][] = []) {
-        this.featMap = new Map(initial);
-    }
+let g1 = new BagOfWordsFeature("g1", "foo", ["foo", "bar", "baz"]);
+let g2 = new NumberFeature("g2", 41);
+let g3 = new BooleanFeature("g3", true);
+let g4 = new SparseFeature("g4", "/home/harry");
 
-    addFeature(k: string, v: number): OpalFeatVec {
-        this.featMap.set(k, v);
-        return this;
-    }
-}
+let fvec = [f1, f2, f3];
+let gvec = [g1, g2, g3];
 
-interface OpalModel {
-    train: (data: OpalFeatVec[]) => void;
-    predict: (fv: OpalFeatVec) => void;
-    format: (fv: OpalFeatVec) => string;
-}
-
-
-// ---- Problem Specific Code ----
-
-class Wabbit implements OpalModel {
-    train(data: OpalFeatVec[]) {
-        throw new Error("Not yet implemented.");
-    }
-
-    predict(data: OpalFeatVec) {
-        let echo = `echo "${this.format(data)}"`;
-        let vw = "vw -i sandbox/wyatt.model -p sandbox/out --quiet";
-        child.exec(`${echo} | ${vw}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`exec error: ${error}`);
-                return;
-            }
-        });
-    }
-
-    format(fv: OpalFeatVec): string {
-        var res = "|";
-        fv.featMap.forEach((v, k) => {
-            res += " ";
-            res += k;
-            res += ":";
-            res += v.toString();
-        });
-        return res;
-    }
-}
-
-let wabbit: OpalModel = new Wabbit();
-
-let cmd = new OpalFeatVec([["cmdroot_ls", 1], ["dir_depth", 10]]);
-
-wabbit.predict(cmd);
+console.log(densify(fvec));
+console.log(densify(gvec));
+console.log(distance(fvec, gvec));
+console.log(distance([f1, f2, f3, f4], [g1, g2, g3, g4]));
