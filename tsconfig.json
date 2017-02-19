@@ -1,16 +1,17 @@
 {
-  "compilerOptions": {
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noImplicitThis": true,
+    "compilerOptions": {
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noImplicitThis": true,
 
-    "target": "ES6",
-    "module": "commonjs",
+        "target": "ES6",
+        "module": "commonjs",
 
-    "outDir": "build",
-    "sourceMap": true
-  },
-  "include": [
-    "src/**/*.ts"
-  ]
+        "outDir": "build",
+        "sourceMap": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "test/**/*.ts"
+    ]
 }

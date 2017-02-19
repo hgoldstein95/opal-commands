@@ -1,18 +1,22 @@
 {
-  "name": "wyatt",
-  "version": "1.0.0",
-  "description": "A utility for completing console commands with Machine Learning.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
-  },
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "typescript": "^2.1.5"
-  },
-  "dependencies": {
-    "@types/node": "^7.0.4"
-  }
+    "name": "wyatt",
+    "version": "1.0.0",
+    "description": "A utility for completing console commands with Machine Learning.",
+    "main": "index.js",
+    "scripts": {
+        "main": "tsc && node build/src/index.js",
+        "test": "tsc && node build/test/test.js",
+        "build": "tsc",
+        "clean": "rm -rf build"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/tape": "^4.2.29",
+        "tape": "^4.6.3",
+        "typescript": "^2.1.5"
+    },
+    "dependencies": {
+        "@types/node": "^7.0.4"
+    }
 }
