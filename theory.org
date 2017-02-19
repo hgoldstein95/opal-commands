@@ -1,0 +1,46 @@
+#+TITLE: Opal Theory
+#+OPTIONS: toc:nil author:nil date:nil num:nil
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+#+LATEX_HEADER: \usepackage{mathpartir}
+#+LATEX_HEADER: \newcommand{\fvec}[2]{\mathbb{F}^{#1}[#2]}
+#+LATEX_HEADER: \newcommand{\newfvec}[1]{\mathrm{vec}(#1)}
+#+LATEX_HEADER: \newcommand{\tstring}{\mathbf{string}}
+#+LATEX_HEADER: \newcommand{\tboolean}{\mathbf{boolean}}
+#+LATEX_HEADER: \newcommand{\tnumber}{\mathbf{number}}
+#+LATEX_HEADER: \newcommand{\new}[1]{\texttt{new #1}}
+#+LATEX_HEADER: \newcommand{\ftype}[1]{\text{#1}}
+
+* Feature Vector Typing
+
+  $$ \begin{aligned}
+  fcons &::= \new{NumberFeature}(e_1, e_2) \mid \new{BooleanFeature}(e_1, e_2)
+  \\
+  e &::= \dots \mid fcons \mid \newfvec{e} \mid e_1 \circ  e_2 \\
+  \\
+  f &::= \ftype{NumberFeature} \mid \ftype{BooleanFeature} \mid
+  \dots \\
+  \tau &::= \tnumber \mid \tboolean \mid \tstring \mid f \mid \fvec{n}{f_1, f_2,
+  \dots, f_n}
+  \end{aligned} $$
+  \\
+
+  $$ \inferrule*[right=FeatureIntro-N] {
+  \Gamma \vdash e_1 : \tstring \\
+  \Gamma \vdash e_2 : \tnumber
+  }{
+  \Gamma \vdash \new{NumberFeature}(e_1, e_2) : \ftype{NumberFeature}
+  } $$
+
+  $$ \inferrule*[right=FVecIntro] {
+  \Gamma \vdash e : \tau \\
+  \exists f (\tau = f)
+  }{
+  \Gamma \vdash \newfvec{e} : \fvec{1}{f}
+  } $$
+
+  $$ \inferrule*[right=Concat] {
+  \Gamma \vdash e_1 : \fvec{n}{f_1, f_2, \dots, f_n} \\
+  \Gamma \vdash e_2 : \fvec{m}{f_{n+1}, f_{n+2}, \dots, f_{n+m}}
+  }{
+  \Gamma \vdash e_1 \circ e_2 : \fvec{n+m}{f_1, f_2, \dots, f_{n+m}}
+  } $$
