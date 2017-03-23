@@ -4,8 +4,7 @@
     "description": "A utility for completing console commands with Machine Learning.",
     "main": "index.js",
     "scripts": {
-        "main": "tsc && node build/src/index.js",
-        "test": "tsc && node build/test/test.js",
+        "main": "tsc && node build/index.js",
         "build": "tsc",
         "clean": "rm -rf build"
     },
