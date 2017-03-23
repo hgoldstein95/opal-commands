@@ -1,9 +1,56 @@
 #+TITLE: Wyatt
 #+OPTIONS: author:nil toc:nil date:nil num:nil html-postamble:nil
 
-A small utility for guessing what command you meant.
+Wyatt serves two purposes. First and foremost, it is a sandbox for exploring the
+feature algebra design for the Opal programming language. Wyatt provides an
+environment for testing different approaches to a type system for machine
+learning features. Eventually, Wyatt will be a system that uses machine learning
+to make command-line programming easier, but that goal is fairly far off at the
+moment.
 
-* Dependencies
+* Building Machine Learning Pipelines
+  The major feature that is currently being implemented is a framework for
+  building machine learning pipelines. Let's say we have a =Document= object,
+  that contains some document we want to classify, and methods for extracting
+  data.
 
-  Before you can use this utility, make sure you have [[https://github.com/JohnLangford/vowpal_wabbit][Vowpal Wabbit]] Installed on
-  your system.
+** Features
+   =Feature= objects are the core of the ML pipeline. Each =Feature= corresponds
+   to a single piece of data, extracted from your domain object. There are three
+   flavors of features in Opal:
+   - =NumericFeature=: These are simple, numeric values. They store a Typescript
+     =number=.
+   - =BoundedFeature=: Bounded features represent categorical features. For
+     example, if your feature is the color of a traffic light, the value might
+     be "red", but it is bounded by the list of values "red", "yellow", "green".
+     For this reason, bounded features contain not only data, but also a
+     dictionary of possible values.
+   - =UnboundedFeature=: Finally, unbounded features behave very similarly to
+     bounded features, but they are slightly more flexible. You can store data
+     as an unbounded feature without needing to specify a list of possible
+     values. This may be useful when the total scope of values is too large, or
+     even unknowable.
+
+** Feature IDs
+   Each =Feature= contains a =FeatureId=. Think of a feature ID as tracking the
+   /meaining/ of a feature. For example, if we have a feature representing the
+   length of a document, we might tag that feature with the id
+   #+BEGIN_SRC javascript
+   new FeatureId("len")
+   #+END_SRC
+
+   These IDs play an integral role in the way features are created. Each feature
+   flavor provides a =generator= method, which takes a feature ID (and a
+   dictionary, in the case of a =BoundedFeature=) and returns a function which
+   can be used to mint new instances of that feature. For the example above, one
+   might do the following:
+   #+BEGIN_SRC javascript
+   let gen = NumericFeature.generator(new FeatureId("len"));
+
+   let f1 = gen(200); // 200 words
+   let f2 = gen(150); // 150 words
+   #+END_SRC
+   Importantly, both of these features will be minted with the same ID. Not just
+   the same string tag, the *EXACT* same object. This is crucial, because we can
+   guarantee that only features created by =gen= will have the same ID. This
+   will become useful when dealing with feature vectors, later.
