@@ -76,9 +76,10 @@ and engines.
    - No two features in the same vector have the same ID.
    - It is fairly clear that the vectors have the same form.
 
-* Models, Generating and Transforming
-  The framework currently under development has two main interfaces that a user
-  might want to implement.
+* Models, Generating and Processing
+  The framework we are developing provides an interface for generating feature
+  vectors, as well as universally useful operations on features and feature
+  vectors.
 
 ** Model Generator
    The =ModelGenerator= interface looks like this
@@ -129,3 +130,24 @@ and engines.
    let v2 = gen.generate(d2);
    let v3 = gen.generate(d3);
    #+END_SRC
+
+** Feature Vector Operations
+   The following operations are available on feature vectors:
+   - =oneNorm=: This method takes two feature vectors and calculates the sum of
+     the absolute values of the differences between corresponding features. It
+     can be used on any feature vectors.
+   - =twoNorm=: This method takes two feature vectors and calculates the sum of
+     the squared differences between corresponding features. It can be used on
+     any feature vectors.
+   - =densify=: Sometimes algorithms prefer features to be simple lists of
+     numbers. This method converts an Opal =FeatureVector= into a =number[]=.
+     Note that it *does not work* if the feature vector contains an
+     =UnboundedFeature=; these do not have a straightforward numeric
+     translation.
+   - =toMap=: Produces a =Map= object that maps the string tag of feature IDs to
+     the data that those IDs mark. In other words, it converts the
+     =FeatureVector= to a more conventional representation, with strings mapped
+     to values.
+
+   We hope that these operations are sufficient for implementing the vast
+   majority of algorithms and translations that would be applied to data.

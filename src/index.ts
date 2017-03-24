@@ -3,7 +3,7 @@ import {
     NumericFeature,
     UnboundedFeature
 } from "./feature_types";
-import { ModelGenerator, ModelProcessor } from "./model";
+import { ModelGenerator } from "./model";
 
 class Document {
     words: string[];
