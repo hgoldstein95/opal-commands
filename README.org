@@ -8,12 +8,12 @@ learning features. Eventually, Wyatt will be a system that uses machine learning
 to make command-line programming easier, but that goal is fairly far off at the
 moment.
 
-* Building Machine Learning Pipelines
-  The major feature that is currently being implemented is a framework for
-  building machine learning pipelines. Let's say we have a =Document= object,
-  that contains some document we want to classify, and methods for extracting
-  data.
+The bulk of the current work on Wyatt is concerned with framework for building
+machine learning pipelines. These pipelines provide a clean, safe, and efficient
+way convert domain objects into formats that are accepted by learning algorithms
+and engines.
 
+* Features and Feature Vectors
 ** Features
    =Feature= objects are the core of the ML pipeline. Each =Feature= corresponds
    to a single piece of data, extracted from your domain object. There are three
@@ -33,17 +33,15 @@ moment.
 
 ** Feature IDs
    Each =Feature= contains a =FeatureId=. Think of a feature ID as tracking the
-   /meaining/ of a feature. For example, if we have a feature representing the
+   /meaining/ of a feature. For example, if we haves a feature representing the
    length of a document, we might tag that feature with the id
    #+BEGIN_SRC javascript
    new FeatureId("len")
    #+END_SRC
-
    These IDs play an integral role in the way features are created. Each feature
-   flavor provides a =generator= method, which takes a feature ID (and a
-   dictionary, in the case of a =BoundedFeature=) and returns a function which
-   can be used to mint new instances of that feature. For the example above, one
-   might do the following:
+   flavor provides a static =generator= method, which takes a feature ID and
+   returns a function which can be used to mint new instances of that feature.
+   For the example above, one might do the following:
    #+BEGIN_SRC javascript
    let gen = NumericFeature.generator(new FeatureId("len"));
 
@@ -54,3 +52,80 @@ moment.
    the same string tag, the *EXACT* same object. This is crucial, because we can
    guarantee that only features created by =gen= will have the same ID. This
    will become useful when dealing with feature vectors, later.
+
+** Feature Vectors
+   =FeatureVector= objects, at their core, are just lists of =Feature=
+   instances. To create a feature vector, start with some feature generators:
+   #+BEGIN_SRC javascript
+   let gens = {
+     len: NumericFeature.generator(new FeatureId("len")),
+     score: NumericFeature.generator(new FeatureId("score")),
+     traffic: BoundedFeature.generator(new FeatureId("traffic"),
+                                       ["red", "yellow", "green"])
+   };
+   #+END_SRC
+   Then, just generate lists of features, using the generators as a sort of
+   template:
+   #+BEGIN_SRC javascript
+   let v1 = [gens.len(200), gens.score(9.6), gens.traffic("red")];
+   let v2 = [gens.len(150), gens.score(8.0), gens.traffic("green")];
+   #+END_SRC
+   While this is clearly not the only way to obtain a =FeatureVector=, vectors
+   generated in this way have some nice properties:
+   - Corresponding features have the same IDs.
+   - No two features in the same vector have the same ID.
+   - It is fairly clear that the vectors have the same form.
+
+* Models, Generating and Transforming
+  The framework currently under development has two main interfaces that a user
+  might want to implement.
+
+** Model Generator
+   The =ModelGenerator= interface looks like this
+   #+BEGIN_SRC javascript
+   interface ModelGenerator<T> {
+     generate(t: T): FeatureVector;
+   }
+   #+END_SRC
+   The type parameter represents the type of some domain object, and the
+   generate method extracts a feature vector from that object. Assume we have a
+   =Document= object, with methods for extracting the document length, some word
+   frequencies, and the first word of the document, the implementation of
+   =ModelGenerator= might look like this:
+   #+BEGIN_SRC javascript
+   class DocumentGenerator implements ModelGenerator<Document> {
+     gens = {
+       len: NumericFeature.generator(new FeatureId("len")),
+       word_the: NumericFeature.generator(new FeatureId("word_the")),
+       word_to: NumericFeature.generator(new FeatureId("word_to")),
+       first: UnboundedFeature.generator<string>(new FeatureId("first"))
+     };
+
+     generate(doc: Document): FeatureVector {
+       return new FeatureVector([
+         this.gens.len(doc.getLen()),
+         this.gens.word_to(doc.getFreq("to")),
+         this.gens.word_the(doc.getFreq("the")),
+         this.gens.first(doc.getFirst())
+       ]);
+     }
+   }
+   #+END_SRC
+   Notice that this pattern just extends the pattern discussed above when
+   exporing how to build a feature vector. The only difference now is that our
+   =ModelGenerator= can now generate compatible feature vectors for a whole set
+   of documents.
+
+   Once we have some documents, we can just generate a feature vector to
+   represent each.
+   #+BEGIN_SRC javascript
+   let d1 = new Document("It doesn't look like anything to me.");
+   let d2 = new Document("These violent delights have violent ends.");
+   let d3 = new Document("Shall we drink to the lady with the white shoes?");
+
+   let gen = new DocumentGenerator();
+
+   let v1 = gen.generate(d1);
+   let v2 = gen.generate(d2);
+   let v3 = gen.generate(d3);
+   #+END_SRC
