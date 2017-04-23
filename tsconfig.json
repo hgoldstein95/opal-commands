@@ -8,9 +8,17 @@
         "module": "commonjs",
 
         "outDir": "build",
-        "sourceMap": true
+        "sourceMap": true,
+
+        "typeRoots": [
+            "node_modules/@types"
+        ],
+        "types": [
+            "node"
+        ]
     },
     "include": [
-        "src/**/*.ts"
+        "src/**/*.ts",
+        "node_modules/@types/**/*.d.ts"
     ]
 }
