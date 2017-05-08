@@ -1,6 +1,4 @@
-class FeatId {
-    tag: string;
-}
+class FeatId { tag: string }
 
 class Numeric {
     form: "n";
@@ -52,15 +50,15 @@ class Unbounded<T> {
     }
 }
 
-class Dense {
-    form: "d";
+class Packed {
+    form: "p";
     id: FeatId;
     data: number[];
 
-    static generator<T>(id: FeatId): (d: number[]) => Dense {
+    static generator<T>(id: FeatId): (d: number[]) => Packed {
         return (data) => {
-            let f = new Dense();
-            f.form = "d";
+            let f = new Packed();
+            f.form = "p";
             f.id = id;
             f.data = data;
             return f;
@@ -68,21 +66,19 @@ class Dense {
     }
 }
 
-type Feature = Numeric | Bounded<any> | Unbounded<any> | Dense;
-
-type FeatureVector = Feature[];
+type Feature = Numeric | Bounded<any> | Unbounded<any> | Packed;
 
 function matchFeature<T>(ncase: (n: Numeric) => T,
                          bcase: <U>(b: Bounded<U>) => T,
                          ucase: <U>(u: Unbounded<U>) => T,
-                         dcase: (d: Dense) => T)
+                         pcase: (d: Packed) => T)
                         : (f: Feature) => T {
     return (f: Feature) => {
         switch (f.form) {
             case "n": return ncase(f);
             case "b": return bcase(f);
             case "u": return ucase(f);
-            case "d": return dcase(f);
+            case "p": return pcase(f);
         }
     };
 }
@@ -90,7 +86,7 @@ function matchFeature<T>(ncase: (n: Numeric) => T,
 function matchTwoFeature<T>(ncase: (n1: Numeric, n2: Numeric) => T,
                             bcase: <U>(b1: Bounded<U>, b2: Bounded<U>) => T,
                             ucase: <U>(u1: Unbounded<U>, u2: Unbounded<U>) => T,
-                            dcase: (d1: Dense, d2: Dense) => T)
+                            pcase: (d1: Packed, d2: Packed) => T)
                             : (f1: Feature, f2: Feature) => T {
     return (f1: Feature, f2: Feature) => {
         if (f1.id.tag !== f2.id.tag) {
@@ -102,8 +98,8 @@ function matchTwoFeature<T>(ncase: (n1: Numeric, n2: Numeric) => T,
             return bcase(f1, f2);
         } else if (f1.form === "u" && f2.form === "u") {
             return ucase(f1, f2);
-        } else if (f1.form === "d" && f2.form === "d") {
-            return dcase(f1, f2);
+        } else if (f1.form === "p" && f2.form === "p") {
+            return pcase(f1, f2);
         } else {
             throw new Error("Feature Mismatch: Forms of " +
                             "features are incompatible.");
@@ -111,21 +107,32 @@ function matchTwoFeature<T>(ncase: (n1: Numeric, n2: Numeric) => T,
     };
 }
 
+class FeatureVector {
+    data: Map<FeatId, Feature>;
 
-let densifyFeat = matchFeature<number[]>(
-    (n: Numeric) => {
-        return [n.data];
-    },
-    <T>(b: Bounded<T>) => {
-        return b.dict.map(x => (x === b.data) ? 1 : 0);
-    },
-    <T>(u: Unbounded<T>) => {
-        throw new Error();
-    },
-    (d: Dense) => d.data
-);
+    constructor(vs: Feature[]) {
+        this.data = new Map();
+        for (let f of vs) {
+            this.data.set(f.id, f);
+        }
+    }
 
-let densify = (v: FeatureVector) => {
-    let vs = v.map(densifyFeat);
-    return vs.reduce((acc, x) => acc.concat(x));
-};
+    map<T>(fn: (feat: Feature) => T): T[] {
+        let res = [];
+        for (let feat of this.data.values()) {
+            res.push(fn(feat));
+        }
+        return res;
+    }
+}
+
+// --- Examples ---
+let id1 = { tag: "f1" };
+let id2 = { tag: "f2" };
+
+let g1 = Numeric.generator(id1);
+let g2 = Numeric.generator(id2);
+
+let v = new FeatureVector([g1(3.14), g2(42)]);
+console.log(v.data.get(id2));
+console.log(v);
