@@ -1,11 +1,30 @@
-class FeatId { tag: string }
+type FeatureForm = "n" | "b" | "u" | "p";
 
-class Numeric {
+/**
+ * A simple representation of a feature ID.
+ */
+export class FeatId {
+    tag: string;
+    form: FeatureForm;
+
+    constructor(tag: string, form: FeatureForm) {
+        this.tag = tag;
+        this.form = form;
+    }
+}
+
+/**
+ * A feature type wrapping a single numeric value.
+ */
+export class Numeric {
     form: "n";
     id: FeatId;
     data: number;
 
     static generator(id: FeatId): (d: number) => Numeric {
+        if (id.form != "n") {
+            throw new Error("ID for Numeric must have form \"n\".");
+        }
         return (data) => {
             let f = new Numeric();
             f.form = "n";
@@ -16,13 +35,20 @@ class Numeric {
     }
 }
 
-class Bounded<T> {
+/**
+ * A feature type containing a categorical feature from a defined set of
+ * possible categories.
+ */
+export class Bounded<T> {
     form: "b";
     id: FeatId;
     dict: T[];
     data: T;
 
     static generator<T>(id: FeatId): (d: T, dict: T[]) => Bounded<T> {
+        if (id.form != "b") {
+            throw new Error("ID for Bounded must have form \"b\".");
+        }
         return (data, dict) => {
             let f = new Bounded<T>();
             f.form = "b";
@@ -34,12 +60,18 @@ class Bounded<T> {
     }
 }
 
-class Unbounded<T> {
+/**
+ * A feature representing an arbitrary categorical feature.
+ */
+export class Unbounded<T> {
     form: "u";
     id: FeatId;
     data: T;
 
     static generator<T>(id: FeatId): (d: T) => Unbounded<T> {
+        if (id.form != "u") {
+            throw new Error("ID for Unbounded must have form \"u\".");
+        }
         return (data) => {
             let f = new Unbounded<T>();
             f.form = "u";
@@ -50,12 +82,18 @@ class Unbounded<T> {
     }
 }
 
-class Packed {
+/**
+ * A complex feature that contains a list of unlabeled numeric features.
+ */
+export class Packed {
     form: "p";
     id: FeatId;
     data: number[];
 
     static generator<T>(id: FeatId): (d: number[]) => Packed {
+        if (id.form != "p") {
+            throw new Error("ID for Packed must have form \"p\".");
+        }
         return (data) => {
             let f = new Packed();
             f.form = "p";
@@ -66,13 +104,26 @@ class Packed {
     }
 }
 
-type Feature = Numeric | Bounded<any> | Unbounded<any> | Packed;
+/**
+ * The type of all features.
+ */
+export type Feature = Numeric | Bounded<any> | Unbounded<any> | Packed;
 
-function matchFeature<T>(ncase: (n: Numeric) => T,
-                         bcase: <U>(b: Bounded<U>) => T,
-                         ucase: <U>(u: Unbounded<U>) => T,
-                         pcase: (d: Packed) => T)
-                        : (f: Feature) => T {
+
+/**
+ * Pattern match on a feature.
+ *
+ * @param ncase the `Numeric` branch
+ * @param bcase the `Bounded` branch
+ * @param ucase the `Unbounded` branch
+ * @param pcase the `Packed` branch
+ * @returns     a function that takes any feature to a `T`
+ */
+export function matchFeature<T>(ncase: (n: Numeric) => T,
+    bcase: <U>(b: Bounded<U>) => T,
+    ucase: <U>(u: Unbounded<U>) => T,
+    pcase: (d: Packed) => T)
+    : (f: Feature) => T {
     return (f: Feature) => {
         switch (f.form) {
             case "n": return ncase(f);
@@ -83,11 +134,20 @@ function matchFeature<T>(ncase: (n: Numeric) => T,
     };
 }
 
-function matchTwoFeature<T>(ncase: (n1: Numeric, n2: Numeric) => T,
-                            bcase: <U>(b1: Bounded<U>, b2: Bounded<U>) => T,
-                            ucase: <U>(u1: Unbounded<U>, u2: Unbounded<U>) => T,
-                            pcase: (d1: Packed, d2: Packed) => T)
-                            : (f1: Feature, f2: Feature) => T {
+/**
+ * Pattern match on two features.
+ *
+ * @param ncase the `Numeric` branch
+ * @param bcase the `Bounded` branch
+ * @param ucase the `Unbounded` branch
+ * @param pcase the `Packed` branch
+ * @returns     a function that takes any pair of features to a `T`
+ */
+export function matchTwoFeature<T>(ncase: (n1: Numeric, n2: Numeric) => T,
+    bcase: <U>(b1: Bounded<U>, b2: Bounded<U>) => T,
+    ucase: <U>(u1: Unbounded<U>, u2: Unbounded<U>) => T,
+    pcase: (d1: Packed, d2: Packed) => T)
+    : (f1: Feature, f2: Feature) => T {
     return (f1: Feature, f2: Feature) => {
         if (f1.id.tag !== f2.id.tag) {
             throw new Error("Feature Mismatch: Incompatible feature IDs.");
@@ -102,12 +162,16 @@ function matchTwoFeature<T>(ncase: (n1: Numeric, n2: Numeric) => T,
             return pcase(f1, f2);
         } else {
             throw new Error("Feature Mismatch: Forms of " +
-                            "features are incompatible.");
+                "features are incompatible.");
         }
     };
 }
 
-class FeatureVector {
+/**
+ * The type of a feature vector, optimized for lookup as well as efficient
+ * transformation to other representations.
+ */
+export class FeatureVector {
     data: Map<FeatId, Feature>;
 
     constructor(vs: Feature[]) {
@@ -115,6 +179,37 @@ class FeatureVector {
         for (let f of vs) {
             this.data.set(f.id, f);
         }
+    }
+
+    getN(id: FeatId): Numeric {
+        return this.getT<Numeric>(id, "n");
+    }
+
+    getB<T>(id: FeatId): Bounded<T> {
+        return this.getT<Bounded<T>>(id, "b");
+    }
+
+    getU<T>(id: FeatId): Unbounded<T> {
+        return this.getT<Unbounded<T>>(id, "u");
+    }
+
+    getP(id: FeatId): Packed {
+        return this.getT<Packed>(id, "p");
+    }
+
+    getT<T extends Feature>(id: FeatId, form: FeatureForm): T {
+        if (id.form != form) {
+            throw new Error("Expected form \"" +
+                            form +
+                            "\" found \"" +
+                            id.form +
+                            "\".");
+        }
+        let f = this.data.get(id);
+        if (!f) throw new Error("Cannot find feature with ID (" +
+                                id.tag +
+                                ").");
+        return f as T;
     }
 
     map<T>(fn: (feat: Feature) => T): T[] {
@@ -125,14 +220,3 @@ class FeatureVector {
         return res;
     }
 }
-
-// --- Examples ---
-let id1 = { tag: "f1" };
-let id2 = { tag: "f2" };
-
-let g1 = Numeric.generator(id1);
-let g2 = Numeric.generator(id2);
-
-let v = new FeatureVector([g1(3.14), g2(42)]);
-console.log(v.data.get(id2));
-console.log(v);
